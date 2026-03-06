@@ -1,6 +1,21 @@
 export const applicationLink = "https://forms.gle/mNMj8zdzQav2GGJT7";
 export const contactEmail = "hike4surecareers@gmail.com";
 
+export const platformStats = [
+  { label: "Partner Companies", value: "120+" },
+  { label: "Roles Closed Last Year", value: "1.5K+" },
+  { label: "Average Time to Interview", value: "7 Days" }
+];
+
+export const trustSignals = [
+  "PixelOrbit",
+  "NorthStone",
+  "ScaleBridge",
+  "BluePeak",
+  "HelioStack",
+  "VisionSprint"
+];
+
 export const jobs = [
   {
     id: "job-1",
@@ -10,6 +25,9 @@ export const jobs = [
     salary: "INR 10L - 16L",
     industry: "IT",
     experience: "2-4 years",
+    type: "Full-time",
+    mode: "Hybrid",
+    posted: "2 days ago",
     featured: true
   },
   {
@@ -20,6 +38,9 @@ export const jobs = [
     salary: "INR 12L - 18L",
     industry: "Finance",
     experience: "4-7 years",
+    type: "Full-time",
+    mode: "On-site",
+    posted: "1 day ago",
     featured: true
   },
   {
@@ -30,6 +51,9 @@ export const jobs = [
     salary: "INR 14L - 22L",
     industry: "Sales",
     experience: "5-8 years",
+    type: "Full-time",
+    mode: "On-site",
+    posted: "3 days ago",
     featured: true
   },
   {
@@ -40,6 +64,9 @@ export const jobs = [
     salary: "INR 8L - 13L",
     industry: "Marketing",
     experience: "2-5 years",
+    type: "Full-time",
+    mode: "Remote",
+    posted: "4 days ago",
     featured: true
   },
   {
@@ -50,6 +77,9 @@ export const jobs = [
     salary: "INR 11L - 17L",
     industry: "IT",
     experience: "3-6 years",
+    type: "Full-time",
+    mode: "Hybrid",
+    posted: "5 days ago",
     featured: false
   },
   {
@@ -60,6 +90,9 @@ export const jobs = [
     salary: "INR 15L - 24L",
     industry: "Finance",
     experience: "6-9 years",
+    type: "Full-time",
+    mode: "On-site",
+    posted: "1 week ago",
     featured: false
   },
   {
@@ -70,6 +103,9 @@ export const jobs = [
     salary: "INR 9L - 14L",
     industry: "Sales",
     experience: "3-5 years",
+    type: "Full-time",
+    mode: "On-site",
+    posted: "6 days ago",
     featured: false
   },
   {
@@ -80,6 +116,9 @@ export const jobs = [
     salary: "INR 13L - 19L",
     industry: "Marketing",
     experience: "4-7 years",
+    type: "Full-time",
+    mode: "Remote",
+    posted: "2 days ago",
     featured: false
   }
 ];
@@ -100,6 +139,12 @@ export const howItWorks = [
 ];
 
 export const industries = ["IT", "Finance", "Sales", "Marketing"];
+
+export const jobSearchTips = [
+  "Use the role keyword field for title and skills together.",
+  "Filter by experience to surface recruiter-matched opportunities.",
+  "Open role details to apply directly from your candidate account."
+];
 
 export const whyChoose = [
   {
@@ -159,6 +204,12 @@ export const employerServices = [
   }
 ];
 
+export const employerOutcomes = [
+  { label: "Average shortlist turnaround", value: "5 business days" },
+  { label: "Interview-to-offer conversion", value: "41%" },
+  { label: "Retention after 12 months", value: "89%" }
+];
+
 export const candidateSteps = [
   {
     step: "Submit Resume",
@@ -176,6 +227,13 @@ export const candidateSteps = [
     step: "Offer",
     detail: "Receive guidance through final discussions and offer closure."
   }
+];
+
+export const candidateBenefits = [
+  "Dedicated recruiter guidance",
+  "Interview readiness checklist",
+  "Salary benchmarking support",
+  "Fast feedback loop with hiring teams"
 ];
 
 export const blogArticles = [
@@ -202,5 +260,23 @@ export const blogArticles = [
     readTime: "6 min read",
     excerpt:
       "Combine focused applications, networking, and recruiter outreach to increase response rates."
+  }
+];
+
+export const faqItems = [
+  {
+    question: "Do I need to apply separately for each job?",
+    answer:
+      "No. Start with a single profile and we match you with suitable openings from our active mandates."
+  },
+  {
+    question: "Can employers hire for multiple departments?",
+    answer:
+      "Yes. We support parallel hiring across engineering, finance, sales, and marketing teams."
+  },
+  {
+    question: "How quickly will I hear back after applying?",
+    answer:
+      "Most shortlisted candidates receive updates within 3 to 7 business days."
   }
 ];
