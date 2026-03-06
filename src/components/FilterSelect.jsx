@@ -5,7 +5,7 @@ const FilterSelect = ({ label, value, options, onChange }) => {
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+        className="input-control py-2"
       >
         {options.map((option) => (
           <option key={option} value={option}>
