@@ -1,25 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: "class",
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,jsx,ts,tsx}"
+  ],
   theme: {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#6A3DF0",
-          light: "#8A5CFF",
-          dark: "#5E3BEE"
-        }
+          DEFAULT: "#0b4f8a",
+          light: "#0f6bb6",
+          dark: "#083a66"
+        },
+        accent: "#13a48f"
       },
       fontFamily: {
         heading: ["Sora", "sans-serif"],
         body: ["Manrope", "sans-serif"]
       },
       boxShadow: {
-        glow: "0 24px 60px -30px rgba(106, 61, 240, 0.75)"
+        glow: "0 20px 45px -28px rgba(11, 79, 138, 0.7)"
       },
       backgroundImage: {
-        "brand-gradient": "linear-gradient(120deg, #8A5CFF 0%, #5E3BEE 100%)"
+        "brand-gradient": "linear-gradient(120deg, #0f6bb6 0%, #13a48f 100%)"
       }
     }
   },

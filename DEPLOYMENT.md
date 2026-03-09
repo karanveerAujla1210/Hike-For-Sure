@@ -1,579 +1,295 @@
 # Hike For Sure - Deployment Guide
 
-## Complete Production-Ready Recruitment Platform
+## Prerequisites
 
----
+- Node.js 18+ installed
+- Supabase account
+- Vercel account
+- Razorpay account
+- Resend account
 
-## Table of Contents
+## 1. Supabase Setup
 
-1. [System Requirements](#system-requirements)
-2. [Local Development Setup](#local-development-setup)
-3. [Database Setup](#database-setup)
-4. [Backend Setup](#backend-setup)
-5. [Frontend Setup](#frontend-setup)
-6. [Environment Configuration](#environment-configuration)
-7. [Production Deployment](#production-deployment)
-8. [Scaling Strategy](#scaling-strategy)
-9. [Monitoring & Maintenance](#monitoring--maintenance)
+### Create Project
+1. Go to https://supabase.com
+2. Create new project
+3. Note your project URL and anon key
 
----
-
-## System Requirements
-
-### Development Environment
-- Node.js 18+ 
-- PostgreSQL 14+
-- Redis 6+
-- Elasticsearch 8+
-- npm or yarn
-
-### Production Environment
-- AWS EC2 / DigitalOcean / Azure VM
-- PostgreSQL (RDS or managed)
-- Redis (ElastiCache or managed)
-- Elasticsearch (AWS OpenSearch or managed)
-- S3 or equivalent for file storage
-- Load Balancer (ALB/NLB)
-- CDN (CloudFront)
-
----
-
-## Local Development Setup
-
-### 1. Clone Repository
-
+### Run Migrations
 ```bash
-git clone https://github.com/karanveerAujla1210/Hike-For-Sure.git
-cd Hike-For-Sure
+# Install Supabase CLI
+npm install -g supabase
+
+# Link to your project
+supabase link --project-ref your-project-ref
+
+# Run migrations
+supabase db push
 ```
 
-### 2. Install PostgreSQL
+### Setup Storage Buckets
+```sql
+-- Create storage buckets
+INSERT INTO storage.buckets (id, name, public) VALUES 
+  ('resumes', 'resumes', false),
+  ('profile-images', 'profile-images', true),
+  ('company-logos', 'company-logos', true);
 
-**Windows:**
-```bash
-# Download from https://www.postgresql.org/download/windows/
-# Install and set password for postgres user
+-- Set storage policies
+CREATE POLICY "Users can upload own resume" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'resumes' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can view own resume" ON storage.objects
+  FOR SELECT USING (bucket_id = 'resumes' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Anyone can view profile images" ON storage.objects
+  FOR SELECT USING (bucket_id = 'profile-images');
+
+CREATE POLICY "Users can upload own profile image" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 ```
 
-**Linux:**
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
+### Enable Realtime
+```sql
+-- Enable realtime for messages
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 ```
 
-**macOS:**
-```bash
-brew install postgresql
-brew services start postgresql
-```
+## 2. Razorpay Setup
 
-### 3. Install Redis
+1. Create account at https://razorpay.com
+2. Get API keys from Dashboard
+3. Create subscription plans:
+   - Pro Plan: ₹999/month
 
-**Windows:**
-```bash
-# Download from https://github.com/microsoftarchive/redis/releases
-# Or use WSL
-```
+4. Setup webhook:
+   - URL: `https://your-domain.com/api/webhooks/razorpay`
+   - Events: `subscription.activated`, `subscription.cancelled`, `subscription.charged`
 
-**Linux:**
-```bash
-sudo apt install redis-server
-sudo systemctl start redis
-```
+## 3. Resend Setup
 
-**macOS:**
-```bash
-brew install redis
-brew services start redis
-```
+1. Create account at https://resend.com
+2. Verify your domain
+3. Get API key from dashboard
 
-### 4. Install Elasticsearch
+## 4. Environment Variables
 
-**All Platforms:**
-```bash
-# Download from https://www.elastic.co/downloads/elasticsearch
-# Extract and run
-./bin/elasticsearch
-```
-
----
-
-## Database Setup
-
-### 1. Create Database
-
-```bash
-psql -U postgres
-CREATE DATABASE hike_for_sure;
-\q
-```
-
-### 2. Run Schema
-
-```bash
-cd backend
-psql -U postgres -d hike_for_sure -f database/schema.sql
-```
-
-### 3. Verify Tables
-
-```bash
-psql -U postgres -d hike_for_sure
-\dt
-```
-
----
-
-## Backend Setup
-
-### 1. Navigate to Backend
-
-```bash
-cd backend
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure Environment
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your configuration:
+Create `.env.local`:
 
 ```env
-NODE_ENV=development
-PORT=5000
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=hike_for_sure
-DB_USER=postgres
-DB_PASSWORD=your_password
+# Razorpay
+RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_SECRET=your_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_PRO_PLAN_ID=your_pro_plan_id
 
-JWT_SECRET=your_super_secret_key_min_32_chars
-JWT_REFRESH_SECRET=your_refresh_secret_key
+# Resend
+RESEND_API_KEY=your_resend_key
 
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-ELASTICSEARCH_NODE=http://localhost:9200
-
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=hike-for-sure-uploads
-
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-
-FRONTEND_URL=http://localhost:5173
+# App
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
-### 4. Start Backend Server
+## 5. Local Development
 
 ```bash
-npm run dev
-```
-
-Backend will run on `http://localhost:5000`
-
----
-
-## Frontend Setup
-
-### 1. Navigate to Frontend
-
-```bash
-cd ..
-```
-
-### 2. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Configure Environment
-
-Create `.env` file:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-```
-
-### 4. Start Frontend
-
-```bash
+# Run development server
 npm run dev
+
+# Open http://localhost:3000
 ```
 
-Frontend will run on `http://localhost:5173`
+## 6. Vercel Deployment
 
----
-
-## Environment Configuration
-
-### Backend Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| NODE_ENV | Environment | production |
-| PORT | Server port | 5000 |
-| DB_HOST | Database host | localhost |
-| DB_PORT | Database port | 5432 |
-| DB_NAME | Database name | hike_for_sure |
-| DB_USER | Database user | postgres |
-| DB_PASSWORD | Database password | secure_password |
-| JWT_SECRET | JWT secret key | min_32_characters |
-| JWT_REFRESH_SECRET | Refresh token secret | min_32_characters |
-| REDIS_HOST | Redis host | localhost |
-| ELASTICSEARCH_NODE | ES endpoint | http://localhost:9200 |
-| AWS_ACCESS_KEY_ID | AWS access key | AKIA... |
-| AWS_SECRET_ACCESS_KEY | AWS secret | secret |
-| AWS_S3_BUCKET | S3 bucket name | uploads |
-| SMTP_HOST | Email server | smtp.gmail.com |
-| FRONTEND_URL | Frontend URL | https://hikeforsure.com |
-
----
-
-## Production Deployment
-
-### Option 1: AWS Deployment
-
-#### 1. Database (RDS)
-
+### Via CLI
 ```bash
-# Create PostgreSQL RDS instance
-# Security group: Allow port 5432 from backend EC2
-# Note down endpoint
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel
+
+# Add environment variables
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+# ... add all other env variables
+
+# Deploy to production
+vercel --prod
 ```
 
-#### 2. Redis (ElastiCache)
+### Via Dashboard
+1. Go to https://vercel.com
+2. Import Git repository
+3. Add environment variables in Settings
+4. Deploy
 
+## 7. Post-Deployment
+
+### Setup Custom Domain
+1. Add domain in Vercel dashboard
+2. Update DNS records
+3. Update `NEXT_PUBLIC_APP_URL` environment variable
+
+### Test Webhooks
 ```bash
-# Create Redis cluster
-# Security group: Allow port 6379 from backend EC2
+# Test Razorpay webhook
+curl -X POST https://your-domain.com/api/webhooks/razorpay \
+  -H "Content-Type: application/json" \
+  -H "x-razorpay-signature: test_signature" \
+  -d '{"event": "subscription.activated"}'
 ```
 
-#### 3. Elasticsearch (OpenSearch)
+### Monitor Performance
+- Enable Vercel Analytics
+- Setup error tracking (Sentry)
+- Monitor Supabase usage
 
-```bash
-# Create OpenSearch domain
-# Configure access policies
-```
-
-#### 4. S3 Bucket
-
-```bash
-aws s3 mb s3://hike-for-sure-uploads
-aws s3api put-bucket-cors --bucket hike-for-sure-uploads --cors-configuration file://cors.json
-```
-
-#### 5. Backend EC2
-
-```bash
-# Launch Ubuntu EC2 instance
-# Install Node.js
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Clone repository
-git clone https://github.com/karanveerAujla1210/Hike-For-Sure.git
-cd Hike-For-Sure/backend
-
-# Install dependencies
-npm install --production
-
-# Configure environment
-nano .env
-
-# Install PM2
-sudo npm install -g pm2
-
-# Start application
-pm2 start src/server.js --name hike-backend
-pm2 startup
-pm2 save
-
-# Setup Nginx reverse proxy
-sudo apt install nginx
-sudo nano /etc/nginx/sites-available/hike-backend
-```
-
-Nginx configuration:
-
-```nginx
-server {
-    listen 80;
-    server_name api.hikeforsure.com;
-
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-```bash
-sudo ln -s /etc/nginx/sites-available/hike-backend /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-
-# Setup SSL with Let's Encrypt
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d api.hikeforsure.com
-```
-
-#### 6. Frontend (S3 + CloudFront)
-
-```bash
-# Build frontend
-cd ../
-npm run build
-
-# Upload to S3
-aws s3 sync dist/ s3://hikeforsure.com --delete
-
-# Create CloudFront distribution
-# Origin: S3 bucket
-# Default root object: index.html
-# Custom error response: 404 -> /index.html (for SPA routing)
-```
-
-### Option 2: DigitalOcean Deployment
-
-```bash
-# Create Droplet (Ubuntu 22.04)
-# SSH into droplet
-
-# Install dependencies
-sudo apt update
-sudo apt install -y nodejs npm postgresql redis-server nginx
-
-# Follow similar steps as AWS EC2
-```
-
-### Option 3: Docker Deployment
-
-Create `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:14
-    environment:
-      POSTGRES_DB: hike_for_sure
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:6
-    ports:
-      - "6379:6379"
-
-  elasticsearch:
-    image: elasticsearch:8.8.0
-    environment:
-      - discovery.type=single-node
-    ports:
-      - "9200:9200"
-
-  backend:
-    build: ./backend
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - REDIS_HOST=redis
-      - ELASTICSEARCH_NODE=http://elasticsearch:9200
-    depends_on:
-      - postgres
-      - redis
-      - elasticsearch
-
-  frontend:
-    build: .
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
-```
-
-```bash
-docker-compose up -d
-```
-
----
-
-## Scaling Strategy
-
-### Horizontal Scaling
-
-1. **Load Balancer**: Use AWS ALB or Nginx
-2. **Multiple Backend Instances**: Run 3+ backend servers
-3. **Database Read Replicas**: PostgreSQL read replicas
-4. **Redis Cluster**: Redis cluster mode
-5. **CDN**: CloudFront for static assets
-
-### Caching Strategy
-
-```javascript
-// Redis caching example
-const cacheKey = `job:${jobId}`;
-const cached = await redis.get(cacheKey);
-
-if (cached) {
-  return JSON.parse(cached);
-}
-
-const job = await db.query('SELECT * FROM jobs WHERE id = $1', [jobId]);
-await redis.setex(cacheKey, 3600, JSON.stringify(job));
-```
-
-### Database Optimization
-
-1. **Indexes**: Already created in schema
-2. **Connection Pooling**: Configured in database.js
-3. **Query Optimization**: Use EXPLAIN ANALYZE
-4. **Partitioning**: Partition large tables by date
-
----
-
-## Monitoring & Maintenance
-
-### Application Monitoring
-
-```bash
-# Install monitoring tools
-npm install --save winston morgan
-
-# PM2 monitoring
-pm2 monit
-pm2 logs
-```
-
-### Database Monitoring
+## 8. Database Indexes (Already in migrations)
 
 ```sql
--- Check slow queries
+-- Performance indexes
+CREATE INDEX idx_jobs_company ON jobs(company_id);
+CREATE INDEX idx_jobs_status ON jobs(status);
+CREATE INDEX idx_applications_job ON applications(job_id);
+CREATE INDEX idx_applications_user ON applications(user_id);
+CREATE INDEX idx_messages_sender ON messages(sender_id);
+CREATE INDEX idx_messages_receiver ON messages(receiver_id);
+
+-- Full-text search
+CREATE INDEX idx_jobs_search ON jobs USING GIN(to_tsvector('english', title || ' ' || description));
+```
+
+## 9. Security Checklist
+
+- ✅ Row Level Security enabled on all tables
+- ✅ Environment variables secured
+- ✅ API rate limiting configured
+- ✅ Input validation with Zod
+- ✅ JWT session validation
+- ✅ Webhook signature verification
+- ✅ CORS configured properly
+
+## 10. Scaling Considerations
+
+### Database
+- Supabase automatically scales
+- Monitor connection pooling
+- Use read replicas for heavy queries
+
+### Frontend
+- Vercel Edge Network handles CDN
+- Automatic scaling based on traffic
+- Enable ISR for static pages
+
+### Storage
+- Supabase Storage scales automatically
+- Use CDN for public assets
+- Implement image optimization
+
+## 11. Monitoring & Analytics
+
+### Setup PostHog (Optional)
+```typescript
+// Add to app/layout.tsx
+import posthog from 'posthog-js'
+
+if (typeof window !== 'undefined') {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  })
+}
+```
+
+### Track Events
+```typescript
+posthog.capture('user_signed_up', { role: 'candidate' })
+posthog.capture('job_applied', { job_id: jobId })
+posthog.capture('subscription_upgraded', { plan: 'pro' })
+```
+
+## 12. Backup Strategy
+
+### Database Backups
+- Supabase provides automatic daily backups
+- Enable Point-in-Time Recovery (PITR)
+- Export critical data weekly
+
+### Storage Backups
+- Implement periodic bucket exports
+- Store backups in separate cloud storage
+
+## 13. Performance Optimization
+
+### Frontend
+```typescript
+// Use dynamic imports
+const JobForm = dynamic(() => import('@/components/forms/job-form'))
+
+// Implement pagination
+const ITEMS_PER_PAGE = 20
+
+// Use React Server Components
+// Already implemented in app directory
+```
+
+### Database
+```sql
+-- Vacuum regularly
+VACUUM ANALYZE;
+
+-- Monitor slow queries
 SELECT * FROM pg_stat_statements ORDER BY total_time DESC LIMIT 10;
-
--- Check table sizes
-SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) 
-FROM pg_tables ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 ```
 
-### Backup Strategy
+## 14. Support & Maintenance
 
-```bash
-# Database backup
-pg_dump -U postgres hike_for_sure > backup_$(date +%Y%m%d).sql
+### Regular Tasks
+- Monitor error logs weekly
+- Review database performance monthly
+- Update dependencies quarterly
+- Security audit bi-annually
 
-# Automated daily backups
-crontab -e
-0 2 * * * pg_dump -U postgres hike_for_sure > /backups/backup_$(date +\%Y\%m\%d).sql
-```
+### User Support
+- Setup support email
+- Create FAQ documentation
+- Implement in-app chat support
 
-### Health Checks
+## Production Checklist
 
-```bash
-# Backend health
-curl http://localhost:5000/health
+- [ ] All migrations applied
+- [ ] Environment variables configured
+- [ ] Storage buckets created
+- [ ] RLS policies enabled
+- [ ] Webhooks configured
+- [ ] Domain configured
+- [ ] SSL certificate active
+- [ ] Analytics tracking enabled
+- [ ] Error monitoring setup
+- [ ] Backup strategy implemented
+- [ ] Performance monitoring active
+- [ ] Security audit completed
 
-# Database health
-psql -U postgres -d hike_for_sure -c "SELECT 1"
+## Estimated Costs (Monthly)
 
-# Redis health
-redis-cli ping
-```
+- Supabase: $25 (Pro plan for 100K users)
+- Vercel: $20 (Pro plan)
+- Razorpay: Transaction fees only
+- Resend: $20 (50K emails)
+- **Total: ~$65/month + transaction fees**
 
----
+## Support
 
-## Security Checklist
-
-- [ ] Change all default passwords
-- [ ] Use strong JWT secrets (min 32 characters)
-- [ ] Enable HTTPS/SSL certificates
-- [ ] Configure CORS properly
-- [ ] Set up rate limiting
-- [ ] Enable database encryption at rest
-- [ ] Use environment variables for secrets
-- [ ] Regular security updates
-- [ ] Implement API authentication
-- [ ] Set up firewall rules
-- [ ] Enable database backups
-- [ ] Monitor logs for suspicious activity
-
----
-
-## Support & Troubleshooting
-
-### Common Issues
-
-**Database Connection Error:**
-```bash
-# Check PostgreSQL is running
-sudo systemctl status postgresql
-
-# Check connection
-psql -U postgres -d hike_for_sure
-```
-
-**Redis Connection Error:**
-```bash
-# Check Redis is running
-redis-cli ping
-```
-
-**Port Already in Use:**
-```bash
-# Find process using port
-lsof -i :5000
-kill -9 <PID>
-```
-
----
-
-## API Documentation
-
-API documentation available at: `http://localhost:5000/api/v1/docs`
-
----
-
-## License
-
-MIT License - See LICENSE file
-
----
-
-## Contact
-
-For support: support@hikeforsure.com
-For sales: sales@hikeforsure.com
-
----
-
-**Platform is now ready for production deployment! 🚀**
+For issues or questions:
+- Email: support@hikeforsure.com
+- Documentation: https://docs.hikeforsure.com
+- GitHub: https://github.com/hikeforsure/platform

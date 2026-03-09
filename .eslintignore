@@ -1,0 +1,8 @@
+src/**
+backend/**
+supabase/functions/**
+app/(auth)/**
+app/(dashboard)/**
+components/layout/navbar.tsx
+lib/api/applications.ts
+lib/auth/auth.ts

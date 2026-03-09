@@ -59,7 +59,7 @@ hike-for-sure/
 │   │   └── footer.tsx
 │   ├── job-card.tsx
 │   ├── message-box.tsx
-│   └── subscription-card.tsx
+│   └── subscription-plans.tsx
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts
@@ -83,8 +83,8 @@ hike-for-sure/
 ├── supabase/
 │   ├── migrations/
 │   │   ├── 001_initial_schema.sql
-│   │   ├── 002_indexes.sql
-│   │   └── 003_rls_policies.sql
+│   │   ├── 002_rls_policies.sql
+│   │   └── 003_indexes.sql
 │   └── functions/
 │       └── send-notification/
 │           └── index.ts

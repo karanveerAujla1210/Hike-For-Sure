@@ -1,572 +1,401 @@
-# Hike For Sure - System Architecture Documentation
+# Hike For Sure - System Architecture
 
-## Complete Production-Ready Recruitment Platform Architecture
+## Overview
 
----
+Production-grade recruitment platform built for scalability, supporting 100,000+ users with modern tech stack.
 
-## Executive Summary
-
-**Hike For Sure** is a professional recruitment and networking platform designed to connect candidates with recruiters, similar to LinkedIn but focused specifically on hiring and career growth. The platform supports millions of users with a scalable, secure, and performant architecture.
-
----
-
-## Architecture Overview
-
-### High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Web App    │  │  Mobile App  │  │   Admin      │      │
-│  │  (React.js)  │  │  (Future)    │  │   Panel      │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      CDN LAYER                               │
-│              CloudFront / Cloudflare                         │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   LOAD BALANCER                              │
-│              AWS ALB / Nginx Load Balancer                   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  APPLICATION LAYER                           │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Backend  │  │ Backend  │  │ Backend  │  │ Backend  │   │
-│  │ Server 1 │  │ Server 2 │  │ Server 3 │  │ Server N │   │
-│  │(Node.js) │  │(Node.js) │  │(Node.js) │  │(Node.js) │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                ┌───────────┼───────────┐
-                ▼           ▼           ▼
-┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
-│   PostgreSQL     │ │    Redis     │ │  Elasticsearch   │
-│   (Primary +     │ │   (Cache +   │ │   (Search)       │
-│   Read Replicas) │ │   Sessions)  │ │                  │
-└──────────────────┘ └──────────────┘ └──────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    STORAGE LAYER                             │
-│              AWS S3 / Cloud Storage                          │
-│         (Resumes, Photos, Documents)                         │
-└─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Technology Stack
+## Tech Stack
 
 ### Frontend
-- **Framework**: React.js 18+
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **State Management**: React Context API
-- **HTTP Client**: Axios
-- **Routing**: React Router v6
-- **Animations**: Framer Motion
+- **Next.js 14** (App Router) - React framework with server components
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first styling
+- **Vercel** - Hosting and CDN
 
 ### Backend
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Language**: JavaScript (ES6+)
-- **Authentication**: JWT (JSON Web Tokens)
-- **Password Hashing**: bcrypt
-- **Validation**: express-validator
+- **Supabase PostgreSQL** - Primary database
+- **Supabase Auth** - Authentication system
+- **Supabase Storage** - File storage
+- **Supabase Edge Functions** - Serverless functions
+- **Supabase Realtime** - WebSocket connections
 
-### Database
-- **Primary Database**: PostgreSQL 14+
-- **Caching**: Redis 6+
-- **Search Engine**: Elasticsearch 8+
-- **ORM**: Native pg driver (no ORM for performance)
+### Third-Party Services
+- **Razorpay** - Payment processing
+- **Resend** - Transactional emails
+- **PostHog** - Analytics (optional)
 
-### Infrastructure
-- **Cloud Provider**: AWS / DigitalOcean / Azure
-- **File Storage**: AWS S3
-- **CDN**: CloudFront
-- **Load Balancer**: AWS ALB
-- **Process Manager**: PM2
-- **Web Server**: Nginx
-
-### DevOps
-- **Version Control**: Git / GitHub
-- **CI/CD**: GitHub Actions
-- **Containerization**: Docker (optional)
-- **Monitoring**: PM2, CloudWatch
-- **Logging**: Winston, Morgan
-
----
-
-## Database Architecture
-
-### Entity Relationship Diagram
+## Architecture Diagram
 
 ```
-users (1) ──────── (1) candidate_profiles
-  │                        │
-  │                        ├── (M) candidate_skills ── (M) skills
-  │                        ├── (M) work_experiences
-  │                        ├── (M) education
-  │                        ├── (M) certifications
-  │                        ├── (M) projects
-  │                        └── (M) documents
-  │
-  ├── (1) recruiter_profiles
-  │         │
-  │         └── (M) jobs ── (M) job_skills ── (M) skills
-  │                   │
-  │                   └── (M) job_applications
-  │                             │
-  │                             └── (M) interviews
-  │
-  ├── (M) connections
-  ├── (M) messages
-  ├── (M) notifications
-  └── (M) subscriptions ── (1) plans
+┌─────────────────────────────────────────────────────────────┐
+│                         Client Layer                         │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Next.js 14 App (React Server Components)           │   │
+│  │  - Server-side rendering                             │   │
+│  │  - Client components for interactivity              │   │
+│  │  - Optimistic UI updates                            │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      Vercel Edge Network                     │
+│  - Global CDN                                                │
+│  - Automatic scaling                                         │
+│  - Edge functions                                            │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      API Layer (Next.js)                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │ Auth Routes  │  │ API Routes   │  │  Webhooks    │      │
+│  │ /login       │  │ /api/jobs    │  │ /api/webhooks│      │
+│  │ /signup      │  │ /api/search  │  │ /razorpay    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Supabase Backend                          │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              PostgreSQL Database                     │   │
+│  │  - Row Level Security (RLS)                         │   │
+│  │  - Full-text search indexes                         │   │
+│  │  - Optimized queries                                │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Supabase Auth                           │   │
+│  │  - JWT tokens                                        │   │
+│  │  - Session management                                │   │
+│  │  - Role-based access                                │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Supabase Storage                        │   │
+│  │  - Resumes bucket                                    │   │
+│  │  - Profile images bucket                            │   │
+│  │  - Company logos bucket                             │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              Supabase Realtime                       │   │
+│  │  - WebSocket connections                             │   │
+│  │  - Live message updates                             │   │
+│  │  - Notification streaming                           │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   External Services                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  Razorpay    │  │   Resend     │  │   PostHog    │      │
+│  │  Payments    │  │   Emails     │  │  Analytics   │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Tables
+## Database Schema
 
-1. **users**: Core authentication and user management
-2. **candidate_profiles**: Candidate information and preferences
-3. **recruiter_profiles**: Recruiter information
-4. **companies**: Company profiles and information
-5. **jobs**: Job postings with full details
-6. **job_applications**: Application tracking
-7. **skills**: Skill taxonomy
-8. **connections**: Professional networking
-9. **messages**: Real-time messaging
-10. **subscriptions**: Premium plans and billing
+### Core Tables
 
-### Database Optimization
+**profiles** - User profiles extending Supabase auth
+- Links to auth.users
+- Stores role (candidate/recruiter/admin)
+- Profile information
 
-- **Indexes**: Created on frequently queried columns
-- **Foreign Keys**: Enforce referential integrity
-- **Triggers**: Auto-update timestamps
-- **Constraints**: Data validation at DB level
-- **Partitioning**: For large tables (future)
-- **Connection Pooling**: Max 20 connections
+**companies** - Company information
+- Created by recruiters
+- Linked to jobs
 
----
+**jobs** - Job postings
+- Belongs to company
+- Created by recruiter
+- Full-text searchable
 
-## API Architecture
+**applications** - Job applications
+- Links candidate to job
+- Tracks status workflow
+- Stores resume URL
 
-### RESTful API Design
+**messages** - Direct messaging
+- Realtime enabled
+- Read status tracking
 
-**Base URL**: `https://api.hikeforsure.com/api/v1`
+**subscriptions** - Payment plans
+- Razorpay integration
+- Job post limits
 
-### API Modules
+### Relationships
 
-#### 1. Authentication Module
 ```
-POST   /auth/signup          - User registration
-POST   /auth/login           - User login
-POST   /auth/logout          - User logout
-POST   /auth/otp/generate    - Generate OTP
-POST   /auth/otp/verify      - Verify OTP
-```
+auth.users (Supabase)
+    ↓
+profiles (1:1)
+    ↓
+    ├─→ jobs (1:many) [as recruiter]
+    ├─→ applications (1:many) [as candidate]
+    ├─→ messages (1:many) [as sender/receiver]
+    ├─→ subscriptions (1:1)
+    └─→ experience, education (1:many)
 
-#### 2. Candidate Module
-```
-GET    /candidates/profile           - Get profile
-PUT    /candidates/profile           - Update profile
-POST   /candidates/skills            - Add skill
-GET    /candidates/skills            - Get skills
-POST   /candidates/experience        - Add experience
-POST   /candidates/education         - Add education
-```
-
-#### 3. Jobs Module
-```
-POST   /jobs                  - Create job (recruiter)
-GET    /jobs                  - List jobs (with filters)
-GET    /jobs/:id              - Get job details
-PUT    /jobs/:id/status       - Update job status
-POST   /jobs/:jobId/apply     - Apply to job
-GET    /applications          - Get my applications
+companies
+    ↓
+jobs (1:many)
+    ↓
+applications (1:many)
 ```
 
-#### 4. Messaging Module
-```
-POST   /conversations                      - Create conversation
-GET    /conversations                      - List conversations
-POST   /conversations/:id/messages         - Send message
-GET    /conversations/:id/messages         - Get messages
-PUT    /conversations/:id/read             - Mark as read
-```
-
-#### 5. Networking Module
-```
-POST   /connections/request           - Send connection request
-PUT    /connections/:id/accept        - Accept request
-DELETE /connections/:id/reject        - Reject request
-GET    /connections                   - Get connections
-GET    /connections/pending           - Get pending requests
-```
-
-#### 6. Subscription Module
-```
-GET    /plans                         - List plans
-POST   /subscriptions                 - Subscribe to plan
-GET    /subscriptions/current         - Get current subscription
-PUT    /subscriptions/:id/cancel      - Cancel subscription
-POST   /payments                      - Process payment
-GET    /payments/history              - Payment history
-```
-
-#### 7. Admin Module
-```
-GET    /admin/dashboard               - Dashboard stats
-GET    /admin/users                   - List all users
-PUT    /admin/users/:id/status        - Update user status
-GET    /admin/reports                 - Get reports
-PUT    /admin/reports/:id/resolve     - Resolve report
-PUT    /admin/companies/:id/verify    - Verify company
-```
-
-### API Response Format
-
-**Success Response:**
-```json
-{
-  "message": "Success message",
-  "data": { ... }
-}
-```
-
-**Error Response:**
-```json
-{
-  "error": "Error message",
-  "details": { ... }
-}
-```
+## Security Architecture
 
 ### Authentication Flow
 
 ```
-1. User sends credentials → POST /auth/login
-2. Server validates credentials
-3. Server generates JWT access token (1h expiry)
-4. Server generates refresh token (7d expiry)
-5. Server stores refresh token in database
-6. Server returns both tokens to client
-7. Client stores tokens in localStorage
-8. Client includes access token in Authorization header
-9. Server validates token on each request
-10. If token expired, client uses refresh token
+1. User submits credentials
+   ↓
+2. Supabase Auth validates
+   ↓
+3. JWT token issued
+   ↓
+4. Token stored in httpOnly cookie
+   ↓
+5. Middleware validates on each request
+   ↓
+6. RLS policies enforce data access
 ```
 
----
+### Row Level Security (RLS)
 
-## Security Architecture
+All tables have RLS enabled:
+- Users can only view/edit their own data
+- Recruiters can manage their jobs
+- Public data (jobs, profiles) viewable by all
+- Applications visible to candidate and recruiter
 
-### Authentication & Authorization
+### Input Validation
 
-1. **JWT Tokens**: Stateless authentication
-2. **Refresh Tokens**: Long-lived tokens for renewal
-3. **Password Hashing**: bcrypt with salt rounds
-4. **Role-Based Access Control**: candidate, recruiter, admin
-5. **Token Expiry**: Access token 1h, Refresh token 7d
-
-### Security Measures
-
-1. **Rate Limiting**: 100 requests per 15 minutes
-2. **CORS**: Configured for specific origins
-3. **Helmet.js**: Security headers
-4. **SQL Injection Prevention**: Parameterized queries
-5. **XSS Protection**: Input sanitization
-6. **HTTPS Only**: SSL/TLS encryption
-7. **Environment Variables**: Secrets management
-8. **Input Validation**: express-validator
-
-### Data Protection
-
-1. **Encryption at Rest**: Database encryption
-2. **Encryption in Transit**: HTTPS/TLS
-3. **Password Policy**: Min 8 chars, complexity
-4. **Session Management**: Redis-based sessions
-5. **Audit Logs**: Track all critical actions
-
----
-
-## Scalability Strategy
-
-### Horizontal Scaling
-
-1. **Stateless Backend**: No server-side sessions
-2. **Load Balancing**: Distribute traffic across servers
-3. **Database Read Replicas**: Separate read/write
-4. **Redis Cluster**: Distributed caching
-5. **Microservices Ready**: Modular architecture
-
-### Vertical Scaling
-
-1. **Database Optimization**: Indexes, query optimization
-2. **Connection Pooling**: Efficient DB connections
-3. **Caching Strategy**: Redis for hot data
-4. **CDN**: Static asset delivery
-5. **Compression**: Gzip compression
-
-### Performance Optimization
-
-1. **Database Indexes**: On frequently queried columns
-2. **Redis Caching**: Cache expensive queries
-3. **Elasticsearch**: Fast full-text search
-4. **Lazy Loading**: Frontend optimization
-5. **Image Optimization**: Compressed images
-6. **API Pagination**: Limit response size
-7. **Query Optimization**: EXPLAIN ANALYZE
-
-### Caching Strategy
-
-```
-Level 1: Browser Cache (static assets)
-Level 2: CDN Cache (images, CSS, JS)
-Level 3: Redis Cache (API responses, sessions)
-Level 4: Database Query Cache
+```typescript
+// Zod schemas validate all inputs
+const jobSchema = z.object({
+  title: z.string().min(5),
+  description: z.string().min(50),
+  // ... more validations
+})
 ```
 
----
-
-## Module Architecture
-
-### 1. Authentication Module
-
-**Purpose**: User registration, login, OTP verification
-
-**Components**:
-- authController.js: Business logic
-- JWT utilities: Token generation/verification
-- OTP service: Generate and verify OTP
-- Email service: Send verification emails
-
-**Flow**:
-```
-User → Signup → Hash Password → Create User → Send OTP → Verify → Login
-```
-
-### 2. Candidate Profile Module
-
-**Purpose**: Manage candidate profiles, skills, experience
-
-**Components**:
-- candidateController.js: Profile management
-- Skills service: Skill matching and endorsements
-- Profile completeness calculator
-- Resume parser (future)
-
-**Features**:
-- Profile CRUD operations
-- Skills management with endorsements
-- Work experience tracking
-- Education history
-- Certifications
-- Projects portfolio
-
-### 3. Job Marketplace Module
-
-**Purpose**: Job posting, searching, and applications
-
-**Components**:
-- jobController.js: Job management
-- Search service: Elasticsearch integration
-- Recommendation engine: Job matching
-- Application tracking
-
-**Features**:
-- Job posting with rich details
-- Advanced search and filters
-- Job recommendations
-- Application management
-- Status tracking
-
-### 4. Messaging Module
-
-**Purpose**: Real-time communication between users
-
-**Components**:
-- messagingController.js: Message handling
-- Socket.io: Real-time updates (future)
-- Conversation management
-- Read receipts
-
-**Features**:
-- One-on-one messaging
-- Group conversations
-- Message history
-- Unread count
-- Real-time notifications
-
-### 5. Networking Module
-
-**Purpose**: Professional connections like LinkedIn
-
-**Components**:
-- networkingController.js: Connection management
-- Notification service: Connection alerts
-- Network graph (future)
-
-**Features**:
-- Send connection requests
-- Accept/reject requests
-- View connections
-- Connection suggestions (future)
-
-### 6. Subscription Module
-
-**Purpose**: Premium plans and billing
-
-**Components**:
-- subscriptionController.js: Plan management
-- Payment gateway integration: Razorpay/Stripe
-- Invoice generation
-- Subscription lifecycle
-
-**Plans**:
-- Candidate Free: Basic features
-- Candidate Pro: Advanced features
-- Recruiter Lite: Limited job posts
-- Recruiter Pro: Unlimited posts
-
-### 7. Admin Module
-
-**Purpose**: Platform management and moderation
-
-**Components**:
-- adminController.js: Admin operations
-- Analytics dashboard
-- User management
-- Content moderation
-
-**Features**:
-- Dashboard with stats
-- User management
-- Company verification
-- Report handling
-- Audit logs
-
----
-
-## Data Flow Architecture
+## Data Flow Examples
 
 ### Job Application Flow
 
 ```
-1. Candidate searches jobs → Elasticsearch
-2. Candidate views job → PostgreSQL + Cache
-3. Candidate applies → Create application record
-4. Trigger notification → Recruiter notified
-5. Update job stats → Increment application count
-6. Send confirmation email → Email service
-7. Update activity feed → Create activity record
-```
-
-### Messaging Flow
-
-```
-1. User sends message → POST /conversations/:id/messages
-2. Validate user is participant → Check database
-3. Save message → PostgreSQL
-4. Update conversation timestamp → Update record
-5. Send real-time notification → Socket.io (future)
-6. Increment unread count → Redis counter
-7. Return message → Response to sender
+1. Candidate views job
+   ↓
+2. Uploads resume to Supabase Storage
+   ↓
+3. Creates application record
+   ↓
+4. Triggers notification to recruiter
+   ↓
+5. Sends email via Resend
+   ↓
+6. Realtime update to recruiter dashboard
 ```
 
 ### Subscription Flow
 
 ```
-1. User selects plan → GET /plans
-2. User subscribes → POST /subscriptions
-3. Create subscription record → PostgreSQL
-4. Redirect to payment → Payment gateway
-5. Process payment → Webhook callback
-6. Update subscription status → Active
-7. Generate invoice → Create invoice record
-8. Send confirmation email → Email service
-9. Grant premium features → Update permissions
+1. Recruiter selects Pro plan
+   ↓
+2. Frontend initiates Razorpay checkout
+   ↓
+3. User completes payment
+   ↓
+4. Razorpay webhook hits /api/webhooks/razorpay
+   ↓
+5. Webhook verifies signature
+   ↓
+6. Updates subscription in database
+   ↓
+7. User gets unlimited job posts
 ```
 
----
-
-## Deployment Architecture
-
-### Production Environment
+### Messaging Flow
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Route 53 (DNS)                        │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│              CloudFront (CDN)                            │
-│         SSL Certificate (ACM)                            │
-└─────────────────────────────────────────────────────────┘
-                          │
-                ┌─────────┴─────────┐
-                ▼                   ▼
-┌──────────────────────┐  ┌──────────────────────┐
-│   S3 Bucket          │  │   ALB                │
-│   (Frontend)         │  │   (Backend)          │
-└──────────────────────┘  └──────────────────────┘
-                                    │
-                          ┌─────────┴─────────┐
-                          ▼                   ▼
-                    ┌──────────┐        ┌──────────┐
-                    │  EC2 1   │        │  EC2 2   │
-                    │ (Backend)│        │ (Backend)│
-                    └──────────┘        └──────────┘
-                          │
-                ┌─────────┼─────────┐
-                ▼         ▼         ▼
-        ┌──────────┐ ┌────────┐ ┌──────────┐
-        │   RDS    │ │ Redis  │ │OpenSearch│
-        │(Primary +│ │ElastiCache│         │
-        │ Replica) │ │        │ │          │
-        └──────────┘ └────────┘ └──────────┘
+1. User sends message
+   ↓
+2. Message saved to database
+   ↓
+3. Supabase Realtime broadcasts
+   ↓
+4. Receiver's client updates instantly
+   ↓
+5. Notification created
+   ↓
+6. Email sent if user offline
 ```
 
-### Monitoring & Logging
+## Performance Optimizations
 
-- **Application Logs**: Winston + CloudWatch
-- **Access Logs**: Nginx + S3
-- **Error Tracking**: Sentry (future)
-- **Performance Monitoring**: New Relic (future)
-- **Uptime Monitoring**: Pingdom (future)
+### Database
+- **Indexes** on foreign keys and search columns
+- **Full-text search** using PostgreSQL GIN indexes
+- **Connection pooling** via Supabase
+- **Query optimization** with proper joins
 
----
+### Frontend
+- **Server Components** for initial render
+- **Client Components** only for interactivity
+- **Dynamic imports** for code splitting
+- **Image optimization** via Next.js
+- **Edge caching** via Vercel
+
+### Caching Strategy
+```typescript
+// Static pages cached at edge
+export const revalidate = 3600 // 1 hour
+
+// Dynamic data with stale-while-revalidate
+fetch(url, { next: { revalidate: 60 } })
+```
+
+## Scalability
+
+### Horizontal Scaling
+- **Vercel**: Auto-scales based on traffic
+- **Supabase**: Managed PostgreSQL with auto-scaling
+- **CDN**: Global edge network
+
+### Database Scaling
+- **Read replicas** for heavy read operations
+- **Connection pooling** (PgBouncer)
+- **Partitioning** for large tables (future)
+
+### File Storage Scaling
+- **Supabase Storage** backed by S3
+- **CDN** for public assets
+- **Lazy loading** for images
+
+## Monitoring & Observability
+
+### Metrics to Track
+- API response times
+- Database query performance
+- Error rates
+- User signup/conversion rates
+- Job application rates
+- Subscription conversions
+
+### Tools
+- **Vercel Analytics** - Frontend performance
+- **Supabase Dashboard** - Database metrics
+- **PostHog** - User analytics
+- **Sentry** (optional) - Error tracking
+
+## Disaster Recovery
+
+### Backups
+- **Database**: Daily automated backups (Supabase)
+- **Point-in-Time Recovery**: 7-day window
+- **Storage**: Replicated across regions
+
+### Recovery Plan
+1. Identify issue
+2. Restore from backup
+3. Replay transactions if needed
+4. Verify data integrity
+5. Resume operations
+
+## API Rate Limiting
+
+```typescript
+// Implement rate limiting per user
+const rateLimit = {
+  free: 100, // requests per hour
+  pro: 1000,
+}
+
+// Use Vercel Edge Config or Upstash Redis
+```
 
 ## Future Enhancements
 
-1. **Real-time Features**: Socket.io for live updates
-2. **Video Interviews**: WebRTC integration
-3. **AI Recommendations**: ML-based job matching
-4. **Mobile Apps**: React Native apps
-5. **Advanced Analytics**: Data visualization
-6. **Resume Parser**: AI-powered resume parsing
-7. **Skill Assessments**: Online coding tests
-8. **Company Reviews**: Glassdoor-like reviews
-9. **Salary Insights**: Market salary data
-10. **Career Coaching**: Premium feature
+### Phase 2
+- Video interviews
+- AI-powered job matching
+- Advanced analytics dashboard
+- Mobile apps (React Native)
 
----
+### Phase 3
+- Multi-language support
+- Company reviews
+- Salary insights
+- Skill assessments
+
+## Cost Optimization
+
+### Current Architecture Costs
+- **Supabase Pro**: $25/month (100K users)
+- **Vercel Pro**: $20/month
+- **Resend**: $20/month (50K emails)
+- **Razorpay**: Transaction fees only
+
+### Optimization Strategies
+- Use edge caching aggressively
+- Optimize database queries
+- Compress images
+- Lazy load components
+- Implement pagination
+
+## Security Best Practices
+
+✅ Environment variables secured
+✅ RLS enabled on all tables
+✅ Input validation with Zod
+✅ JWT token validation
+✅ Webhook signature verification
+✅ HTTPS only
+✅ CORS configured
+✅ SQL injection prevention
+✅ XSS protection
+✅ CSRF tokens
+
+## Development Workflow
+
+```bash
+# Local development
+npm run dev
+
+# Run migrations
+supabase db push
+
+# Type generation
+supabase gen types typescript --local > types/database.types.ts
+
+# Build for production
+npm run build
+
+# Deploy to Vercel
+vercel --prod
+```
+
+## Testing Strategy
+
+### Unit Tests
+- API functions
+- Validation schemas
+- Utility functions
+
+### Integration Tests
+- Authentication flow
+- Job application flow
+- Payment flow
+
+### E2E Tests
+- User signup → job application
+- Recruiter → job posting → applicant review
 
 ## Conclusion
 
-**Hike For Sure** is built with a modern, scalable, and secure architecture designed to handle millions of users. The modular design allows for easy maintenance and future enhancements. The platform follows industry best practices for security, performance, and scalability.
-
----
-
-**Architecture Version**: 1.0  
-**Last Updated**: 2024  
-**Maintained By**: Hike For Sure Engineering Team
+This architecture provides:
+- ✅ Scalability to 100K+ users
+- ✅ Security with RLS and validation
+- ✅ Performance with caching and optimization
+- ✅ Reliability with backups and monitoring
+- ✅ Cost-effectiveness (~$65/month)
+- ✅ Developer experience with modern tools
